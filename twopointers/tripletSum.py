@@ -1,0 +1,48 @@
+from typing import List
+
+
+def main(nums: List[int]) -> List[List[int]]:
+    sortedNums = sorted(nums)
+    triplets = []
+
+    for i in range(len(sortedNums)):
+        # No sum of sorted numbers which equals 0 if a is greater than 0
+        if sortedNums[i] > 0:
+            break
+
+        # If the last triplet's "a" value is the same; increment
+        if i > 0 and sortedNums[i] == sortedNums[i - 1]:
+            continue
+
+        a = sortedNums[i]
+        left = i + 1
+        right = len(sortedNums) - 1
+
+        while left < right:
+            b, c = sortedNums[left], sortedNums[right]
+            sum = a + b + c
+
+            if sum == 0:
+                triplets.append([a, b, c])
+
+                left += 1
+
+                # Avoid duplicate "b" values in pairs
+                while left < right and b == sortedNums[left]:
+                    left += 1
+            elif sum < 0:
+                left += 1
+            else:
+                right -= 1
+
+    return triplets
+
+
+def test_main():
+    assert (main([])) == []
+    assert (main([0])) == []
+    assert (main([1, -1])) == []
+    assert (main([0, 0, 0])) == [[0, 0, 0]]
+    assert (main([1, 0, 1])) == []
+    assert (main([0, 0, 1, -1, 1, -1])) == [[-1, 0, 1]]
+    assert (main([0, -1, 2, -3, 1])) == [[-3, 1, 2], [-1, 0, 1]]
