@@ -7,11 +7,8 @@ def verify_sudoku_board(board: List[List[int]]) -> bool:
     row_hashset = [ set() for _ in range(len(board)) ]
     subgrid_hashset = [ [ set() for _ in range(len(board) // 3) ] for _ in range(len(board) // 3) ]
 
-    print(len(board))
     for r in range(len(board)):
-        print(r, len(board[r]))
         for c in range(len(board[r])): 
-            print(c)
             cell_value = board[r][c]
 
             if cell_value == 0:
