@@ -22,6 +22,15 @@ class LRUCache:
         self.head: ListNode | None = None
         self.tail: ListNode | None = None
 
+    def add_node_to_MRU(self, node):
+        """Adds the node to the tail of the cache"""
+
+        if self.tail:
+            self.tail.next = node
+
+        self.tail = node
+
+
     def get(self, key: int) -> int:
         """Returns the value at the key or -1 if it does not exist"""
 
@@ -29,29 +38,22 @@ class LRUCache:
             raise ValueError("The use of negative keys are not supported")
 
         # If key exists in the LRU cache, make it the new Tail node and return its value
+        if key in self.hashmap:
+
+            node = self.hashmap[key]
+            self.move_node_to_MRU(node)
+
+            return node.val
 
         # If it doesn't exist, return -1
+        else:
+            return -1
 
-        pass
+    def move_node_to_MRU(self, node: ListNode):
+        """Moves the node from it's current position to the tail"""
 
-    def update_node_to_MRU(self, node: ListNode):
-        # Remove node from its current position
-        node_next = node.next
-        node_prev = node.prev
-
-        if node.prev:
-            node.prev.next = node_next
-
-        if node.next:
-            node.next.prev = node_prev
-
-        # Add node to tail
-        if self.tail:
-            self.tail.next = node
-
-        self.tail = node
-
-
+        self.remove_node(node)
+        self.add_node_to_MRU(node)
 
     def put(self, key: int, val: int) -> None:
         """
@@ -64,42 +66,88 @@ class LRUCache:
         if val < 0:
             raise ValueError("Negative values are not supported")
 
-        # WARN: this doesn't process ListNode access
-        # Add or update the key:value in the hashmap
-        self.hashmap[key] = val
 
-        # Instantiate the head of the cache
-        if not self.head:
-            self.head = ListNode(val)
-            return
 
-        # Instantiate the tail of the cache
-        if not self.head.next:
-            self.tail = ListNode(val, prev = self.head)
-            self.head.next = self.tail
-            return
+        if key in self.hashmap:
 
-        # Add the new value to the cache by replacing the tail
-        self.update_node_to_MRU(ListNode(val, prev = self.tail)
+            # Update the key:value in the hashmap
+            self.hashmap[key].val = val
 
-        # If over capacity, evict the Head node (LRU) and remove it from the hashmap
-        if len(self.hashmap) > self.capacity:
-            del self.hashmap[list(self.hashmap)[0]]
+            # Update the node's position to the tail
+            self.move_node_to_MRU(self.hashmap[key])
+
+        else:
+
+            # Instantiate the head of the cache
+            if not self.head:
+                node = ListNode(val)
+
+                self.head = node
+                self.hashmap[key] = node
+
+                return
+
+            node = ListNode(val, prev = self.tail)
+
+            # Instantiate the tail of the cache
+            if not self.head.next:
+                self.tail = node
+                self.head.next = self.tail
+                self.hashmap[key] = node
+
+                return
+
+            if self.capacity == len(self.hashmap):
+
+                # Remove the LRU
+                self.remove_LRU()
+
+                # Add new value to hashmap
+                self.hashmap[key] = node
+
+                # Add new node to tail
+                self.add_node_to_MRU(node)
             
-            self.head = self.head.next
-            self.head.prev = None
+            else:
+
+                # Add new value to hashmap
+                self.hashmap[key] = node
+
+                # Add new node to tail
+                self.add_node_to_MRU(node)
+
+    def remove_node(self, node: ListNode):
+        """Removes the node from the cache's linked list"""
+
+        node_next = node.next
+        node_prev = node.prev
+
+        if node.prev:
+            node.prev.next = node_next
+
+        if node.next:
+            node.next.prev = node_prev
+
+    def remove_LRU(self):
+        """Removes the LRU node from the cache's linked list and deletes its key from the hashmap"""
+
+        key = list(self.hashmap)[0]
+        node = self.hashmap[key]
+
+        del self.hashmap[key]
+        self.remove_node(node)
 
     def values(self) -> List[int]:
+        """Returns a list of the hashmaps values' values"""
+
         cur = self.head
         values = []
 
         while self.head and cur:
-            print(self.head.val)
             values.append(cur.val)
-            cur = self.head.next
+            cur = cur.next
 
         return values
-
 
 def test_lru_cache():
     cache = LRUCache(3)
