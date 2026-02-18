@@ -1,5 +1,9 @@
-from listNode import ListNode
-from typing import List
+class DoublyLinkedListNode:
+    def __init__(self, key: int, val: int):
+        self.key = key
+        self.next = None
+        self.prev = None
+        self.val = val
 
 class LRUCache:
     def __init__(self, capacity: int):
@@ -19,17 +23,28 @@ class LRUCache:
 
         self.capacity = capacity
         self.hashmap = {}
-        self.head: ListNode | None = None
-        self.tail: ListNode | None = None
+
+        # Instantiate with dummy nodes to simplify put and get operations
+        self.head = DoublyLinkedListNode(-1, -1)
+        self.tail = DoublyLinkedListNode(-1, -1)
+        self.head.next = self.tail
+        self.tail.prev = self.head
 
     def add_node_to_MRU(self, node):
-        """Adds the node to the tail of the cache"""
+        """
+        Adds the node to the tail of the cache
 
-        if self.tail:
-            self.tail.next = node
+        Since our head and tail nodes are permanent dummy nodes, we're effectively treating
+        the nodes after the head and before the tail node as the head and tail node, so here
+        we need to add the node immediately before self.tail.
+        """
 
-        self.tail = node
+        old_tail = self.tail.prev
 
+        node.next = self.tail
+        node.prev = old_tail
+        old_tail.next = node
+        self.tail.prev = node
 
     def get(self, key: int) -> int:
         """Returns the value at the key or -1 if it does not exist"""
@@ -37,19 +52,17 @@ class LRUCache:
         if key < 0:
             raise ValueError("The use of negative keys are not supported")
 
+        if key not in self.hashmap:
+            return -1;
+
         # If key exists in the LRU cache, make it the new Tail node and return its value
-        if key in self.hashmap:
+        node = self.hashmap[key]
 
-            node = self.hashmap[key]
-            self.move_node_to_MRU(node)
+        self.move_node_to_MRU(node)
 
-            return node.val
+        return node.val
 
-        # If it doesn't exist, return -1
-        else:
-            return -1
-
-    def move_node_to_MRU(self, node: ListNode):
+    def move_node_to_MRU(self, node: DoublyLinkedListNode):
         """Moves the node from it's current position to the tail"""
 
         self.remove_node(node)
@@ -66,90 +79,38 @@ class LRUCache:
         if val < 0:
             raise ValueError("Negative values are not supported")
 
-
-
         if key in self.hashmap:
+            self.remove_node(self.hashmap[key])
 
-            # Update the key:value in the hashmap
-            self.hashmap[key].val = val
+        node = DoublyLinkedListNode(key, val)
 
-            # Update the node's position to the tail
-            self.move_node_to_MRU(self.hashmap[key])
+        # Add new value to hashmap
+        self.hashmap[key] = node
 
-        else:
+        if self.capacity < len(self.hashmap):
 
-            # Instantiate the head of the cache
-            if not self.head:
-                node = ListNode(val)
+            # Remove the LRU
+            self.remove_LRU()
 
-                self.head = node
-                self.hashmap[key] = node
+        # Add new node to tail
+        self.add_node_to_MRU(node)
 
-                return
-
-            node = ListNode(val, prev = self.tail)
-
-            # Instantiate the tail of the cache
-            if not self.head.next:
-                self.tail = node
-                self.head.next = self.tail
-                self.hashmap[key] = node
-
-                return
-
-            if self.capacity == len(self.hashmap):
-
-                # Remove the LRU
-                self.remove_LRU()
-
-                # Add new value to hashmap
-                self.hashmap[key] = node
-
-                # Add new node to tail
-                self.add_node_to_MRU(node)
-            
-            else:
-
-                # Add new value to hashmap
-                self.hashmap[key] = node
-
-                # Add new node to tail
-                self.add_node_to_MRU(node)
-
-    def remove_node(self, node: ListNode):
+    def remove_node(self, node: DoublyLinkedListNode):
         """Removes the node from the cache's linked list"""
 
-        node_next = node.next
-        node_prev = node.prev
-
         if node.prev:
-            node.prev.next = node_next
+            node.prev.next = node.next
 
         if node.next:
-            node.next.prev = node_prev
+            node.next.prev = node.prev
 
     def remove_LRU(self):
         """Removes the LRU node from the cache's linked list and deletes its key from the hashmap"""
 
-        key = list(self.hashmap)[0]
-        node = self.hashmap[key]
+        del self.hashmap[self.head.next.key]
+        self.remove_node(self.head.next)
 
-        del self.hashmap[key]
-        self.remove_node(node)
-
-    def values(self) -> List[int]:
-        """Returns a list of the hashmaps values' values"""
-
-        cur = self.head
-        values = []
-
-        while self.head and cur:
-            values.append(cur.val)
-            cur = cur.next
-
-        return values
-
-def test_lru_cache():
+def test_lru_cache_one():
     cache = LRUCache(3)
     operations = [
             lambda: cache.put(1, 100),
@@ -160,8 +121,35 @@ def test_lru_cache():
             lambda: cache.get(4),
             lambda: cache.get(1),
     ]
+    output = []
 
     for operation in operations:
-        operation()
+        result = operation()
 
-    assert cache.values() == [250, 300, -1]
+        if result != None:
+            output.append(result)
+
+    assert output == [250, 300, -1]
+
+def test_lru_cache_two():
+    cache = LRUCache(2)
+    operations = [
+            lambda: cache.put(1, 1),
+            lambda: cache.put(2, 2),
+            lambda: cache.get(1),
+            lambda: cache.put(3, 3),
+            lambda: cache.get(2),
+            lambda: cache.put(4, 4),
+            lambda: cache.get(1),
+            lambda: cache.get(3),
+            lambda: cache.get(4),
+    ]
+    output = []
+
+    for operation in operations:
+        result = operation()
+
+        if result != None:
+            output.append(result)
+
+    assert output == [1, -1, -1, 3, 4]
