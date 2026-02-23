@@ -45,7 +45,6 @@ def find_longest_consecutive_chain(nums: List[int]) -> int:
 
     return longest_chain
 
-
 def test_find_longest_consecutive_chain():
     assert find_longest_consecutive_chain([1, 6, 2, 5, 8, 7, 10, 3]) == 4
 
