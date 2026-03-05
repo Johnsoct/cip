@@ -9,11 +9,11 @@ def find_insertion_index(nums: List[int], target: int) -> int:
     while left < right:
         mid = left + (right - left) // 2
 
-        # Slide the window to the left
+        # slide the window to the left
         if nums[mid] >= target:
             right = mid
 
-        # Slide the window to the right
+        # slide the window to the right
         else:
             left = mid + 1
 
